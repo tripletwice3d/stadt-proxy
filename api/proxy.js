@@ -1,3 +1,4 @@
+console.log("Proxy API gestartet");
 // Datei: api/proxy.js
 
 export default async function handler(req, res) {

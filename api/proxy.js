@@ -1,4 +1,3 @@
-// api/proxy.js
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Nur POST erlaubt" });
@@ -10,12 +9,18 @@ export default async function handler(req, res) {
   try {
     const forward = await fetch(makeWebhookUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
     });
 
-    const result = await forward.json();
-    return res.status(200).json(result);
+    const resultText = await forward.text(); // <<— Text statt JSON
+    return res.status(forward.status).json({
+      message: "Forwarding result",
+      status: forward.status,
+      result: resultText
+    });
   } catch (error) {
     return res.status(500).json({ error: "Proxy-Fehler", details: error.message });
   }

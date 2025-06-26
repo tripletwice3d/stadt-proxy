@@ -3,14 +3,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Nur POST erlaubt" });
   }
 
-  let body = '';
+  let body;
   try {
-    for await (const chunk of req) {
-      body += chunk;
-    }
-    body = JSON.parse(body);
+    body = await req.json(); // <-- das ist richtig!
   } catch (e) {
-    return res.status(400).json({ message: "Ungültiger JSON Body", error: e.message });
+    return res.status(400).json({ message: "Ungültiger JSON-Body", error: e.message });
   }
 
   const makeWebhookUrl = "https://hook.eu2.make.com/agkpxsp8oki976hdxoo6oev8r6hgdgbc";
@@ -24,13 +21,15 @@ export default async function handler(req, res) {
       body: JSON.stringify(body)
     });
 
-    const text = await forward.text();
-
+    const resultText = await forward.text();
     return res.status(forward.status).json({
-      message: "Resultat erhalten",
-      result: text
+      message: "Ergebnis erhalten",
+      result: resultText
     });
   } catch (error) {
-    return res.status(500).json({ message: "Proxy-Fehler", error: error.message });
+    return res.status(500).json({
+      message: "Proxy-Fehler",
+      error: error.message
+    });
   }
 }

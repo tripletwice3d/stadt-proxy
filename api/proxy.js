@@ -24,18 +24,20 @@ try {
       buffers.push(chunk);
     }
     const data = Buffer.concat(buffers).toString();
-    body = JSON.parse(data);
+
+    try {
+      body = JSON.parse(data);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      res.status(400).json({ message: 'Ungültiges JSON', error: parseError.message });
+      return;
+    }
   }
 
   console.log('Body:', body);
 
   const { stadt } = body;
 
-
-    if (!stadt) {
-      res.status(400).json({ message: 'Fehlender Parameter: stadt' });
-      return;
-    }
 
     const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(stadt)}`);
     const geoData = await geoResponse.json();

@@ -15,20 +15,22 @@ export default async function handler(req, res) {
     return;
   }
 
-  try {
-    const body = req.body;
+try {
+  let body = req.body;
 
-    // Body könnte leer sein – explizit parsen
-    if (!body || typeof body !== 'object') {
-      const buffers = [];
-      for await (const chunk of req) {
-        buffers.push(chunk);
-      }
-      const data = Buffer.concat(buffers).toString();
-      body = JSON.parse(data);
+  if (!body || typeof body !== 'object') {
+    const buffers = [];
+    for await (const chunk of req) {
+      buffers.push(chunk);
     }
+    const data = Buffer.concat(buffers).toString();
+    body = JSON.parse(data);
+  }
 
-    const { stadt } = body;
+  console.log('Body:', body);
+
+  const { stadt } = body;
+
 
     if (!stadt) {
       res.status(400).json({ message: 'Fehlender Parameter: stadt' });

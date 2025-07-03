@@ -1,22 +1,39 @@
 export default async function handler(req, res) {
   // CORS-Header setzen
-  res.setHeader('Access-Control-Allow-Origin', 'https://urban-origin.de'); // oder '*' für Tests
+  res.setHeader('Access-Control-Allow-Origin', 'https://urban-origin.de');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Preflight-Anfragen (OPTIONS) sofort beenden
+  // Preflight-Anfrage behandeln
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
 
   if (req.method !== 'POST') {
-    res.status(405).json({ message: 'Method not allowed' });
+    res.status(405).json({ message: 'Nur POST erlaubt' });
     return;
   }
 
   try {
-    const { stadt } = req.body;
+    const body = req.body;
+
+    // Body könnte leer sein – explizit parsen
+    if (!body || typeof body !== 'object') {
+      const buffers = [];
+      for await (const chunk of req) {
+        buffers.push(chunk);
+      }
+      const data = Buffer.concat(buffers).toString();
+      body = JSON.parse(data);
+    }
+
+    const { stadt } = body;
+
+    if (!stadt) {
+      res.status(400).json({ message: 'Fehlender Parameter: stadt' });
+      return;
+    }
 
     const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(stadt)}`);
     const geoData = await geoResponse.json();
@@ -34,7 +51,7 @@ export default async function handler(req, res) {
         stadt: city.display_name,
         latitude: city.lat,
         longitude: city.lon,
-        imageUrl: 'https://example.com/your-custom-image.jpg' // Optional für später
+        imageUrl: 'https://example.com/your-custom-image.jpg' // Optional
       }
     });
   } catch (error) {

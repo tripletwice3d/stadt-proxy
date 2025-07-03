@@ -1,28 +1,44 @@
-console.log("Proxy API gestartet");
-// Datei: api/proxy.js
-
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Nur POST erlaubt" });
+  // CORS-Header setzen
+  res.setHeader('Access-Control-Allow-Origin', 'https://urban-origin.de'); // oder '*' für Tests
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Preflight-Anfragen (OPTIONS) sofort beenden
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ message: 'Method not allowed' });
+    return;
   }
 
   try {
-    const body = req.body;
+    const { stadt } = req.body;
 
-    const makeWebhookUrl = "https://hook.eu2.make.com/agkpxsp8oki976hdxoo6oev8r6hgdgbc"; // DEIN HOOK
+    const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(stadt)}`);
+    const geoData = await geoResponse.json();
 
-    const forward = await fetch(makeWebhookUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
+    if (!geoData.length) {
+      res.status(200).json({ message: 'Keine Ergebnisse gefunden', result: null });
+      return;
+    }
+
+    const city = geoData[0];
+
+    res.status(200).json({
+      message: 'Ergebnis erhalten',
+      result: {
+        stadt: city.display_name,
+        latitude: city.lat,
+        longitude: city.lon,
+        imageUrl: 'https://example.com/your-custom-image.jpg' // Optional für später
+      }
     });
-
-    const text = await forward.text();
-    return res.status(forward.status).json({ message: "Ergebnis erhalten", result: text });
-
   } catch (error) {
-    return res.status(500).json({ message: "Proxy-Fehler", error: error.message });
+    console.error('Proxy-Fehler:', error);
+    res.status(500).json({ message: 'Interner Serverfehler', error: error.message });
   }
 }

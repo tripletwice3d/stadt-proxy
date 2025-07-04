@@ -30,15 +30,22 @@ export default async function handler(req, res) {
     // Debug-Ausgabe für Logs
     console.log('Empfangen von Frontend:', { city, country, lat, lng });
 
-    // Direkte Rückgabe – kein OSM-Fetch nötig
+    // 🔁 Daten an Make-Webhook senden
+    await fetch('https://hook.eu2.make.com/agkpxsp8oki976hdxoo6oev8r6hgdgbc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ city, country, lat, lng })
+    });
+
+    // Rückgabe an Frontend
     res.status(200).json({
-      message: 'Ergebnis erhalten',
+      message: 'Ergebnis erhalten und an Make weitergegeben',
       result: {
         stadt: city,
         country: country,
         latitude: lat,
         longitude: lng,
-        imageUrl: 'https://example.com/your-custom-image.jpg' // Optional, für zukünftiges Design
+        imageUrl: 'https://example.com/your-custom-image.jpg'
       }
     });
 

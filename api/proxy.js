@@ -17,40 +17,31 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { stadt } = req.body;
+    const { city, country, lat, lng } = req.body;
 
-    // Fetch mit User-Agent-Header, sonst blockt OSM
-    const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(stadt)}`, {
-      headers: {
-        'User-Agent': 'urban-origin-proxy/1.0 (urban-origin.de)',
-      }
-    });
-
-    // Fehler bei OSM-Request
-    if (!geoResponse.ok) {
-      console.error('Fehler von OpenStreetMap:', geoResponse.statusText);
-      res.status(502).json({ message: 'Fehler bei Geo-API', status: geoResponse.status });
-      return;
+    if (!lat || !lng || !city || !country) {
+      console.warn('Ungültige oder unvollständige Daten empfangen:', req.body);
+      return res.status(400).json({
+        message: 'Fehlende oder ungültige Daten: city, country, lat, lng erforderlich',
+        received: req.body
+      });
     }
 
-    const geoData = await geoResponse.json();
+    // Debug-Ausgabe für Logs
+    console.log('Empfangen von Frontend:', { city, country, lat, lng });
 
-    if (!geoData.length) {
-      res.status(200).json({ message: 'Keine Ergebnisse gefunden', result: null });
-      return;
-    }
-
-    const city = geoData[0];
-
+    // Direkte Rückgabe – kein OSM-Fetch nötig
     res.status(200).json({
       message: 'Ergebnis erhalten',
       result: {
-        stadt: city.display_name,
-        latitude: city.lat,
-        longitude: city.lon,
-        imageUrl: 'https://example.com/your-custom-image.jpg' // Optional für später
+        stadt: city,
+        country: country,
+        latitude: lat,
+        longitude: lng,
+        imageUrl: 'https://example.com/your-custom-image.jpg' // Optional, für zukünftiges Design
       }
     });
+
   } catch (error) {
     console.error('Proxy-Fehler:', error);
     res.status(500).json({ message: 'Interner Serverfehler', error: error.message });
